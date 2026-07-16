@@ -2,6 +2,11 @@ from time import time
 
 import torch
 from maxpool_1d_fast import maxpool_1d_fast
+from maxpool_1d_brute import maxpool_1d_brute
+from maxpool_1d_heap import maxpool_1d_heap
+from maxpool_1d_cuda import maxpool_1d_cuda_brute
+from maxpool_1d_cuda import maxpool_1d_cuda_smart
+from maxpool_1d_cuda import maxpool_1d_cuda_memory
 
 
 def maxpool_1d_torch(x: torch.Tensor, window_size: int) -> torch.Tensor:
@@ -26,16 +31,16 @@ def bench(f, tensor_size=2**10, window_size=128, device="cpu"):
 
 
 if __name__ == "__main__":
-    # tensor_size = 2**15
-    # window_size = 2**8
-    # bench(maxpool_1d_brute, tensor_size, window_size)
-    # bench(maxpool_1d_heap, tensor_size, window_size)
+     tensor_size = 2**15
+     window_size = 2**8
+     bench(maxpool_1d_brute, tensor_size, window_size)
+     bench(maxpool_1d_heap, tensor_size, window_size)
 
-    tensor_size = 2**25
-    window_size = 2**15
-    # bench(maxpool_1d_torch, tensor_size, window_size, device="cuda")
-    # bench(maxpool_1d_cuda_brute, tensor_size, window_size, device="cuda")
-    # bench(maxpool_1d_cuda_smart, tensor_size, window_size, device="cuda")
-    # bench(maxpool_1d_cuda_memory, tensor_size, window_size, device="cuda")
+    #tensor_size = 2**25
+    #window_size = 2**15
+     #bench(maxpool_1d_torch, tensor_size, window_size, device="cuda")
+     #bench(maxpool_1d_cuda_brute, tensor_size, window_size, device="cuda")
+     #bench(maxpool_1d_cuda_smart, tensor_size, window_size, device="cuda")
+     #bench(maxpool_1d_cuda_memory, tensor_size, window_size, device="cuda")
 
-    bench(maxpool_1d_fast, tensor_size, window_size, device="cuda")
+    #bench(maxpool_1d_fast, tensor_size, window_size, device="cuda")
