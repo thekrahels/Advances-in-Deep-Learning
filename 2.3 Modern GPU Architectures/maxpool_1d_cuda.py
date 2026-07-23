@@ -9,8 +9,18 @@ def _load():
     warnings.filterwarnings("ignore")
     from torch.utils.cpp_extension import load
 
-    return load("maxpool_1d_cuda", sources=[Path(__file__).parent / "maxpool_1d_cuda.cu"], verbose=False)
-
+    return load(
+        "maxpool_1d_cuda",
+        sources=[Path(__file__).parent / "maxpool_1d_cuda.cu"],
+        extra_cuda_cflags=[
+            "-allow-unsupported-compiler",
+            "-D_ALLOW_COMPILER_AND_STL_VERSION_MISMATCH",
+        ],
+        extra_cflags=[
+            "/D_ALLOW_COMPILER_AND_STL_VERSION_MISMATCH",
+        ],
+        verbose=False,
+    )
 
 def maxpool_1d_cuda_brute(x: torch.Tensor, window_size: int) -> torch.Tensor:
     return _load().maxpool_1d_brute(x, window_size)
