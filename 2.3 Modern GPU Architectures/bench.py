@@ -41,6 +41,6 @@ if __name__ == "__main__":
     #bench(maxpool_1d_torch, tensor_size, window_size, device="cuda")
     bench(maxpool_1d_cuda_brute, tensor_size, window_size, device="cuda")
     bench(maxpool_1d_cuda_smart, tensor_size, window_size, device="cuda")
-    bench(maxpool_1d_cuda_memory, tensor_size, window_size, device="cuda")
+    #bench(maxpool_1d_cuda_memory, tensor_size, window_size, device="cuda")
 
     #bench(maxpool_1d_fast, tensor_size, window_size, device="cuda")
