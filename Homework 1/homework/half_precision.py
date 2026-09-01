@@ -52,11 +52,11 @@ class HalfBigNet(torch.nn.Module):
             # TODO: Implement me (feel free to copy and reuse code from bignet.py)
             #raise NotImplementedError()
             self.model = torch.nn.Sequential(
-            HalfLinear(channels, channels),
-            torch.nn.ReLU(),
-            HalfLinear(channels, channels),
-            torch.nn.ReLU(),
-            HalfLinear(channels, channels),
+                HalfLinear(channels, channels),
+                torch.nn.ReLU(),
+                HalfLinear(channels, channels),
+                torch.nn.ReLU(),
+                HalfLinear(channels, channels),
             )
 
         def forward(self, x: torch.Tensor):
