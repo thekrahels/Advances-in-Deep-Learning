@@ -31,13 +31,13 @@ class LoRALinear(HalfLinear):
         #raise NotImplementedError()
 
         self.lora_a = torch.nn.Linear(in_features, lora_dim, bias=False, dtype=torch.float32)
-        self.lora_b = torch.nn.Linear(lora_dim, out_features,  bias=False, dtype=torch.float32)
+        self.lora_b = torch.nn.Linear(lora_dim, out_features, bias=False, dtype=torch.float32)
 
         torch.nn.init.zeros_(self.lora_a.weight)
         torch.nn.init.zeros_(self.lora_b.weight)
 
-        self.lora_a.requires_grad_(False)
-        self.lora_b.requires_grad_(False)
+        self.lora_a.requires_grad_(True)
+        self.lora_b.requires_grad_(True)
 
         
     def forward(self, x: torch.Tensor) -> torch.Tensor:
@@ -45,7 +45,10 @@ class LoRALinear(HalfLinear):
         #raise NotImplementedError()
 
         base = super().forward(x)
-        return base + self.lora_b(self.lora_a(x.float()))(x.dtype)
+
+
+
+        return base + self.lora_b(self.lora_a(x.float())).to(x.dtype)
 
 
 class LoraBigNet(torch.nn.Module):
