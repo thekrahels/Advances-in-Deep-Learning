@@ -34,7 +34,7 @@ class LoRALinear(HalfLinear):
         self.lora_a = torch.nn.Linear(in_features, lora_dim, bias=False, dtype=torch.float32)
         self.lora_b = torch.nn.Linear(lora_dim, out_features, bias=False, dtype=torch.float32)
 
-        torch.nn.init.zeros_(self.lora_a.weight, std = 0.02)
+        torch.nn.init.normal_(self.lora_a.weight, mean=0.0,std = 0.02)
         torch.nn.init.zeros_(self.lora_b.weight)
 
         self.lora_a.requires_grad_(True)
