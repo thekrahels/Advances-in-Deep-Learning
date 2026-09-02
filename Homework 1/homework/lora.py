@@ -29,11 +29,12 @@ class LoRALinear(HalfLinear):
         # TODO: Implement LoRA, initialize the layers, and make sure they are trainable
         # Keep the LoRA layers in float32
         #raise NotImplementedError()
+        self.scale = lora_dim
 
         self.lora_a = torch.nn.Linear(in_features, lora_dim, bias=False, dtype=torch.float32)
         self.lora_b = torch.nn.Linear(lora_dim, out_features, bias=False, dtype=torch.float32)
 
-        torch.nn.init.zeros_(self.lora_a.weight)
+        torch.nn.init.zeros_(self.lora_a.weight, std = 0.02)
         torch.nn.init.zeros_(self.lora_b.weight)
 
         self.lora_a.requires_grad_(True)
@@ -48,7 +49,7 @@ class LoRALinear(HalfLinear):
 
 
 
-        return base + self.lora_b(self.lora_a(x.float())).to(x.dtype)
+        return base + self.scale*self.lora_b(self.lora_a(x.float())).to(x.dtype)
 
 
 class LoraBigNet(torch.nn.Module):
