@@ -36,3 +36,41 @@ def block_quantize_3bit(x: torch.Tensor, group_size: int = 32,) -> tuple[torch.T
     packed = packed.view(packed.size(0), group_size * 3 // 8)
 
     return packed, normalization.to(torch.float16)
+
+
+def block_dequantize_3bit( packed: torch.Tensor, normalization: torch.Tensor, group_size: int = 32) -> torch.Tensor:
+    assert packed.dim() == 2
+    assert group_size % 8 == 0
+
+    number_of_groups = packed.size(0)
+
+    packed_bytes = packed.view(number_of_groups, group_size // 8, 3).to(torch.int32)
+
+    packed_24 = packed[:, :, 0] + (packed[:, :, 1] << 8) + (packed[:, :, 2] << 16)
+   
+    unpacked = torch.stack(
+        [
+            (packed_24 >> 0) & 0x7F,
+            (packed_24 >> 3) & 0x7F,
+            (packed_24 >> 6) & 0x7F,
+            (packed_24 >> 9) & 0x7F,
+            (packed_24 >> 12) & 0x7F,
+            (packed_24 >> 15) & 0x7F,
+            (packed_24 >> 18) & 0x7F,
+            (packed_24 >> 21) & 0x7F,
+        ],
+        dim=1,
+    )
+
+    unpacked = unpacked.view(number_of_groups, group_size).to(torch.float32)
+
+    normalization = normalization.to(torch.float32)
+    x_norm = unpacked / 7
+    x = (unpacked * 2 * normalization) - normalization
+    return x.view(-1)
+
+class Linear3bit(torch.nn.Module):
+    def __init__(self, in_features, out_features, bias=True, group_size: int = 32,) -> None:
+        super().__init__()
+        
+
