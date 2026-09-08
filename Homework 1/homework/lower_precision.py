@@ -73,4 +73,42 @@ class Linear3bit(torch.nn.Module):
     def __init__(self, in_features, out_features, bias=True, group_size: int = 32,) -> None:
         super().__init__()
         
+        assert group_size % 8 == 0
+        assert out_features * in_features % group_size == 0
+        
+        self._shape = (out_features, in_features)
+        self._group_size = group_size
 
+        number_of_weights = out_features * in_features
+        number_of_groups = number_of_weights // group_size
+
+        self.register_buffer(
+            "weight_q3",
+            torch.zeros(number_of_groups, group_size * 3 // 8, dtype=torch.uint8),
+            persistent=False,
+        )
+        self.register_buffer(
+            "weight_norm",
+            torch.zeros(number_of_groups, 1, dtype=torch.float16),
+            persistent=False,
+        )
+
+        self.register_load_state_dict_pre_hook(Linear3bit._load_state_dict_pre_hook, with_module=True)
+
+        self.bias = None
+        if bias:
+            self.bias = torch.nn.Parameter(torch.zeros(out_features, dtype=torch.float32,))
+
+            def _load_state_dict_pre_hook(
+                self, state_dict, prefix, local_metadata, strict, missing_keys, unexpected_keys, error_msgs
+            ):
+                weight_key = f"{prefix}weight"
+                if weight_key in state_dict:
+                    # Load the original weights and remove them from the state_dict (mark them as loaded)
+                    weight = state_dict[weight_key]  # noqa: F841
+                    del state_dict[weight_key]
+                    
+
+                    weight_q3, weight_norm = block_quantize_3bit(weight.flatten(), self._group_size,)
+                    self.weight_q3.copy_(weight_q3)
+                    self.weight_norm.copy_(weight_norm)
