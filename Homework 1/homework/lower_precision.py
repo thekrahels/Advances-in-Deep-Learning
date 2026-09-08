@@ -99,16 +99,64 @@ class Linear3bit(torch.nn.Module):
         if bias:
             self.bias = torch.nn.Parameter(torch.zeros(out_features, dtype=torch.float32,))
 
-            def _load_state_dict_pre_hook(
-                self, state_dict, prefix, local_metadata, strict, missing_keys, unexpected_keys, error_msgs
-            ):
-                weight_key = f"{prefix}weight"
-                if weight_key in state_dict:
-                    # Load the original weights and remove them from the state_dict (mark them as loaded)
-                    weight = state_dict[weight_key]  # noqa: F841
-                    del state_dict[weight_key]
+    def _load_state_dict_pre_hook(
+        self, state_dict, prefix, local_metadata, strict, missing_keys, unexpected_keys, error_msgs
+        ):
+            weight_key = f"{prefix}weight"
+            if weight_key in state_dict:
+                # Load the original weights and remove them from the state_dict (mark them as loaded)
+                weight = state_dict[weight_key]  # noqa: F841
+                del state_dict[weight_key]
                     
 
-                    weight_q3, weight_norm = block_quantize_3bit(weight.flatten(), self._group_size,)
-                    self.weight_q3.copy_(weight_q3)
-                    self.weight_norm.copy_(weight_norm)
+                weight_q3, weight_norm = block_quantize_3bit(weight.flatten(), self._group_size,)
+                self.weight_q3.copy_(weight_q3)
+                self.weight_norm.copy_(weight_norm)
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        with torch.no_grad():
+
+            weight = block_dequantize_3bit(self.weight_q3, self.weight_norm, self._group_size)
+            weight = weight.view(self._shape)
+            return torch.nn.functional.linear(x, weight, self.bias)
+
+class LowerPrecisionBigNet(torch,nn.Module):
+    class Block(torch.nn.Module):
+        def __init__(self, channels: int, group_size: int):
+            super().__init__()
+            self.model = torch.nn.Sequential(
+                Linear3bit(channels, channels, group_size=group_size),
+                torch.nn.ReLU(),
+                Linear3bit(channels, channels, group_size=group_size),
+                torch.nn.ReLU(),
+                Linear3bit(channels, channels, group_size=group_size),
+            )
+
+        def forward(self, x: torch.Tensor) -> torch.Tensor:
+            return self.model(x) + x
+
+    def __init__(self, group_size: int = 32):
+        super().__init__()
+        self.model = torch.nn.Sequential(
+            self.Block(BIGNET_DIM, group_size),
+            LayerNorm(BIGNET_DIM),
+            self.Block(BIGNET_DIM, group_size),
+            LayerNorm(BIGNET_DIM),
+            self.Block(BIGNET_DIM, group_size),
+            LayerNorm(BIGNET_DIM),
+            self.Block(BIGNET_DIM, group_size),
+            LayerNorm(BIGNET_DIM),
+            self.Block(BIGNET_DIM, group_size),
+            LayerNorm(BIGNET_DIM),
+            self.Block(BIGNET_DIM, group_size),
+        )
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        return self.model(x)
+
+def load(path: Path | None) -> LowerPrecisionBigNet:
+    net = LowerPrecisionBigNet()
+    if path is not None:
+        net.load_state_dict(torch.load(path, weights_only=True))
+    return net
+    
