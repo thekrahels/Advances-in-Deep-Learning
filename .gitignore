@@ -1,0 +1,25 @@
+# Python
+__pycache__/
+*.pyc
+
+# VS Code
+.vscode/
+
+# Training artifacts
+**/logs/
+**/checkpoints/
+
+# Homework datasets
+**/data/
+
+# TensorBoard
+events.out.tfevents*
+
+# Trained models
+*.pth
+
+# Tokenized datasets
+tokenized_*.pth
+
+# Generated submissions
+*.zip
