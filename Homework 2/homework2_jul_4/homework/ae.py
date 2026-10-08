@@ -147,7 +147,7 @@ class PatchAutoEncoder(torch.nn.Module, PatchAutoEncoderBase):
             ##raise NotImplementedError()
             x = hwc_to_chw(x)
             x = self.model(x)
-            x = cwh_to_hwc(x)
+            x = chw_to_hwc(x)
             return self.unpatchify(x)
         
     def __init__(self, patch_size: int = 25, latent_dim: int = 128, bottleneck: int = 128):
