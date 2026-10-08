@@ -114,19 +114,42 @@ class PatchAutoEncoder(torch.nn.Module, PatchAutoEncoderBase):
 
         def __init__(self, patch_size: int, latent_dim: int, bottleneck: int):
             super().__init__()
-            raise NotImplementedError()
+            ##raise NotImplementedError()
+            self.patchify = PatchifyLinear(patch_size, latent_dim)
+            self.model = torch.nn.Sequential(
+                torch.nn.GELU(),
+                torch.nn.Conv2d(in_channels=latent_dim, out_channels=latent_dim, kernel_size=3, padding=1),
+                torch.nn.GELU(),
+                torch.nn.Conv2d(in_channels=latent_dim, out_channels=bottleneck, kernel_size=1),
+            )
 
         def forward(self, x: torch.Tensor) -> torch.Tensor:
-            raise NotImplementedError()
+            ##raise NotImplementedError()
+            x = self.patchify(x)
+            x =hwc_to_chw(x)
+            x = self.model(x)
+            return chw_to_hwc(x)
 
     class PatchDecoder(torch.nn.Module):
         def __init__(self, patch_size: int, latent_dim: int, bottleneck: int):
             super().__init__()
-            raise NotImplementedError()
+            ##raise NotImplementedError()
+            self.model = torch.nn.Sequential(
+                torch.nn.Conv2d(in_channels=bottleneck, out_channels=latent_dim, kernel_size=1),
+                torch.nn.GELU(),
+                torch.nn.Conv2d(in_channels=latent_dim, out_channels=latent_dim, kernel_size=3, padding=1),
+                torch.nn.GELU(),
+                
+            )
+            self.unpatchify = UnpatchifyLinear(patch_size=patch_size, latent_dim=latent_dim)
 
         def forward(self, x: torch.Tensor) -> torch.Tensor:
-            raise NotImplementedError()
-
+            ##raise NotImplementedError()
+            x = hwc_to_chw(x)
+            x = self.model(x)
+            x = cwh_to_hwc(x)
+            return self.unpatchify(x)
+        
     def __init__(self, patch_size: int = 25, latent_dim: int = 128, bottleneck: int = 128):
         super().__init__()
         raise NotImplementedError()
