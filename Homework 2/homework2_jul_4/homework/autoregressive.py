@@ -69,7 +69,54 @@ class AutoregressiveModel(torch.nn.Module, Autoregressive):
                                                   
 
     def forward(self, x: torch.Tensor) -> tuple[torch.Tensor, dict[str, torch.Tensor]]:
-        raise NotImplementedError()
+        ##raise NotImplementedError()
+        batch_size = x.shape
+        height = x.shape
+        width = x.shape
+        seq_len = height * width
+
+        if(seq_len > self.max_seq_len):
+            raise ValueError(f"Input sequence length is too long: {seq_len} > {self.max_seq_len}")
+
+        start = self.start_embedding.expand(batch_size, -1, -1)
+        shifted = torch.cat((start, token_embeddings[:, :-1]), dim=1)
+
+        positions = torch.arange(seq_len, device=x.device)
+
+        shifted = (shifted + self.position_embedding(positions).unsqueeze(0))
+
+        causal_mask = torch.triu(torch.ones(seq_len, seq_len, device=x.device, dtype=torch.bool), diagonal=1)
+        features = self.transformer(shifted, mask=causal_mask)
+        logits = self.output_projection(features)
+        logits = logits.reshape(batch_size, height, width, self.n_tokens)
+
+        return logits, {}
+        
+        
 
     def generate(self, B: int = 1, h: int = 30, w: int = 20, device=None) -> torch.Tensor:  # noqa
-        raise NotImplementedError()
+        ##raise NotImplementedError()
+        if device is None:
+            device = next(self.parameters()).device
+        else:
+            device = torch.device(device)
+
+        was_training = self.training
+        self.eval()
+
+        generated = torch.zeros(B, h, w, device=device, dtype=torch.long)
+
+        generated_flat = generated.reshape(B, h * w)
+
+        for i in range(h * w):
+            logits, _ = self.forward(generated)
+            logits_flat = logits.reshape(B, h * w, self.n_tokens) 
+            next_token_logits = logits_flat[:, i, :]
+
+            probabilities = torch.softmax(next_token_logits, dim=-1)
+
+            next_token = torch.multinomial(probabilities, num_samples=1).squeeze(-1)
+            generated_flat[:, i] = next_token
+
+        if was_training: self.train()
+        return generated
