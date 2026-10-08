@@ -70,7 +70,8 @@ class BSQ(torch.nn.Module):
         Implement the BSQ decoder:
         - A linear up-projection into embedding_dim should suffice
         """
-        raise NotImplementedError()
+        ##raise NotImplementedError()
+        return self.up_project(x)
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         return self.decode(self.encode(x))
@@ -105,19 +106,29 @@ class BSQPatchAutoEncoder(PatchAutoEncoder, Tokenizer):
 
     def __init__(self, patch_size: int = 5, latent_dim: int = 128, codebook_bits: int = 10):
         super().__init__(patch_size=patch_size, latent_dim=latent_dim)
-        raise NotImplementedError()
+        ##raise NotImplementedError()
+        self.codebook_bits = codebook_bits
+        self.codebook = BSQ(codebook_bits=codebook_bits, embedding_dim=latent_dim)
 
     def encode_index(self, x: torch.Tensor) -> torch.Tensor:
-        raise NotImplementedError()
+        ##raise NotImplementedError()
+        patch_embeddings = self.encoder(x)
+        return self.codebook.encode_index(patch_embeddings)
 
     def decode_index(self, x: torch.Tensor) -> torch.Tensor:
-        raise NotImplementedError()
+        ##raise NotImplementedError()
+        patch_embeddings = self.codebook.decode_index(x)
+        return self.decoder(patch_embeddings)
 
     def encode(self, x: torch.Tensor) -> torch.Tensor:
-        raise NotImplementedError()
+        ##raise NotImplementedError()
+        patch_embeddings = self.encoder(x)
+        return self.codebook.encode(patch_embeddings)
 
     def decode(self, x: torch.Tensor) -> torch.Tensor:
-        raise NotImplementedError()
+        ##raise NotImplementedError()
+        patch_embeddings = self.codebook.decode(x)
+        return self.decoder(patch_embeddings)
 
     def forward(self, x: torch.Tensor) -> tuple[torch.Tensor, dict[str, torch.Tensor]]:
         """
@@ -135,4 +146,12 @@ class BSQPatchAutoEncoder(PatchAutoEncoder, Tokenizer):
                 ...
               }
         """
-        raise NotImplementedError()
+        ##raise NotImplementedError()
+        binary = self.encode(x)
+        reconstructed = self.decode(binary)
+
+        with torch.no_grad():
+            token_indices = self.codebook._code_to_index(binary)
+            counts = torch.bincount(token_indices.flatten(), minlength=2**self.codebook_bits)
+            codebook_metrics = {"cb0": (counts == 0).float().mean(), "cb2": (counts <= 2).float().mean()}
+            return reconstructed, codebook_metrics
