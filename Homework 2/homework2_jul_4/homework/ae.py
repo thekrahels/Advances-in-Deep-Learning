@@ -152,7 +152,12 @@ class PatchAutoEncoder(torch.nn.Module, PatchAutoEncoderBase):
         
     def __init__(self, patch_size: int = 25, latent_dim: int = 128, bottleneck: int = 128):
         super().__init__()
-        raise NotImplementedError()
+        ##raise NotImplementedError()
+        self.patch_size = patch_size
+        self.latent_dim = latent_dim
+        self.bottleneck = bottleneck
+        self.encoder = self.PatchEncoder(patch_size=patch_size, latent_dim=latent_dim, bottleneck=bottleneck)
+        self.decoder = self.PatchDecoder(patch_size=patch_size, latent_dim=latent_dim, bottleneck=bottleneck)
 
     def forward(self, x: torch.Tensor) -> tuple[torch.Tensor, dict[str, torch.Tensor]]:
         """
@@ -160,10 +165,14 @@ class PatchAutoEncoder(torch.nn.Module, PatchAutoEncoderBase):
         minimize (or even just visualize).
         You can return an empty dictionary if you don't have any additional terms.
         """
-        raise NotImplementedError()
+        ##raise NotImplementedError()
+        reconstructed = self.decode(self.encode(x))
+        return reconstructed, {}
 
     def encode(self, x: torch.Tensor) -> torch.Tensor:
-        raise NotImplementedError()
+        ##raise NotImplementedError()
+        return self.encoder(x)
 
     def decode(self, x: torch.Tensor) -> torch.Tensor:
-        raise NotImplementedError()
+        ##raise NotImplementedError()
+        return self.decoder(x)
