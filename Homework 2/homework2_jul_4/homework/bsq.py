@@ -46,7 +46,11 @@ class Tokenizer(abc.ABC):
 class BSQ(torch.nn.Module):
     def __init__(self, codebook_bits: int, embedding_dim: int):
         super().__init__()
-        raise NotImplementedError()
+        ##raise NotImplementedError()
+        self.codebook_bits = codebook_bits
+        self.embedding_dim = embedding_dim
+        self.down_project = torch.nn.Linear(in_features=embedding_dim, out_features=codebook_bits)
+        self.up_project = torch.nn.Linear(in_features=codebook_bits, out_features=embedding_dim)
 
     def encode(self, x: torch.Tensor) -> torch.Tensor:
         """
@@ -55,7 +59,11 @@ class BSQ(torch.nn.Module):
         - L2 normalization
         - differentiable sign
         """
-        raise NotImplementedError()
+        ##raise NotImplementedError()
+        x = self.down_project(x)
+        x = torch.nn.functional.normalize(x, p=2,dim=-1, eps=1e-8)
+        x = diff_sign(x)
+        return x
 
     def decode(self, x: torch.Tensor) -> torch.Tensor:
         """
