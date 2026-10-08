@@ -70,13 +70,18 @@ class AutoregressiveModel(torch.nn.Module, Autoregressive):
 
     def forward(self, x: torch.Tensor) -> tuple[torch.Tensor, dict[str, torch.Tensor]]:
         ##raise NotImplementedError()
-        batch_size = x.shape
-        height = x.shape
-        width = x.shape
+        batch_size = x.shape[0]
+        height = x.shape[1]
+        width = x.shape[2]
+        ##print(x.shape)
+        ##print(type(x.shape))
         seq_len = height * width
 
         if(seq_len > self.max_seq_len):
             raise ValueError(f"Input sequence length is too long: {seq_len} > {self.max_seq_len}")
+
+        tokens = x.reshape(batch_size, seq_len)
+        token_embeddings = self.token_embedding(tokens)
 
         start = self.start_embedding.expand(batch_size, -1, -1)
         shifted = torch.cat((start, token_embeddings[:, :-1]), dim=1)
