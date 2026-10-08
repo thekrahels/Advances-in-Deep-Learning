@@ -47,7 +47,7 @@ class BSQ(torch.nn.Module):
     def __init__(self, codebook_bits: int, embedding_dim: int):
         super().__init__()
         ##raise NotImplementedError()
-        self.codebook_bits = codebook_bits
+        self._codebook_bits = codebook_bits
         self.embedding_dim = embedding_dim
         self.down_project = torch.nn.Linear(in_features=embedding_dim, out_features=codebook_bits)
         self.up_project = torch.nn.Linear(in_features=codebook_bits, out_features=embedding_dim)
