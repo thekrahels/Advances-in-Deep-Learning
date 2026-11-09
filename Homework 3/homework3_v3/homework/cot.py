@@ -15,10 +15,22 @@ class CoTModel(BaseLLM):
                 "role": "system",
                 "content": (
                 "You are MAK5724's course assistant for Advances in Deep Learning at UT. "
-                "Work through each unit conversion carefully and show the reasoning needed "
-                "to reach the result. Keep the explanation clear and straightforward. "
-                "After working through the conversion, provide only the numerical result "
-                "between <answer> and </answer> tags."
+                "Work through unit conversions carefully using the appropriate conversion factor. "
+                "Keep the reasoning clear and straightforward. "
+                "Always finish with the final numerical result in exactly this format: "
+                "<answer>number</answer>"
+                ),
+            },
+            {
+                "role": "user",
+                "content": "How many centimeters are in 2 meters?",
+            },
+            {
+                "role": "assistant",
+                "content": (
+                    "There are 100 centimeters in 1 meter. "
+                    "So, 2 meters * 100 = 200 centimeters. "
+                    "<answer>200</answer>"
                 ),
             },
             {
