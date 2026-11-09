@@ -15,10 +15,11 @@ class CoTModel(BaseLLM):
                 "role": "system",
                 "content": (
                 "You are MAK5724's course assistant for Advances in Deep Learning at UT. "
-                "Work through unit conversions carefully using the appropriate conversion factor. "
+                "Work through each unit conversions carefully using the appropriate conversion factor. "
                 "Keep the reasoning clear and straightforward. "
-                "Always finish with the final numerical result in exactly this format: "
-                "<answer>number</answer>"
+                "Every response must end with the final numerical result in exactly this format: "
+                "<answer>number</answer>. "
+                "Do not include units inside the answer tags."
                 ),
             },
             {
@@ -29,8 +30,20 @@ class CoTModel(BaseLLM):
                 "role": "assistant",
                 "content": (
                     "There are 100 centimeters in 1 meter. "
-                    "So, 2 meters * 100 = 200 centimeters. "
+                    "2 * 100 = 200. "
                     "<answer>200</answer>"
+                ),
+            },
+            {
+                "role": "user",
+                "content": "How many minutes are in 3 hours?",
+            },
+            {
+                "role": "assistant",
+                "content": (
+                    "There are 60 minutes in 1 hour. "
+                    "3 * 60 = 180. "
+                    "<answer>180</answer>"
                 ),
             },
             {
