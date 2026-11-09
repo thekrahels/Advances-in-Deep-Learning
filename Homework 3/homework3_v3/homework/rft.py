@@ -1,5 +1,5 @@
 from .base_llm import BaseLLM
-from .sft import test_model
+from .data import Dataset
 from .sft import TokenizedDataset, test_model
 
 def load() -> BaseLLM:
@@ -16,6 +16,20 @@ def load() -> BaseLLM:
 
     return llm
 
+def format_example(
+    prompt: str,
+    correct_answer: float,
+    reasoning: str,
+) -> dict[str, str]:
+    """
+    Format an accepted RFT example for training.
+    The correct_answer was used during rejection sampling to verify the
+    generated reasoning, so training uses the accepted reasoning itself.
+    """
+    return {
+        "question": prompt,
+        "answer": reasoning,
+    }
 
 def train_model(
     output_dir: str,
