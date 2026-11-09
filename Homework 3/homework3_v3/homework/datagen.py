@@ -4,17 +4,13 @@ from pathlib import Path
 from .cot import CoTModel
 from .data import Dataset, is_answer_valid
 
-def generate_dataset(output_json: str, oversample: int = 10, temperature: float = 0.6, target_examples: int = 1000, checkpoint_every: int = 25,):
+def generate_dataset(output_json: str, oversample: int = 5, temperature: float = 0.6, checkpoint_every: int = 25,):
     #raise NotImplementedError()
     """
-    Generate rejection fine-tuning data.
+    Generate a coverage-focused RFT dataset.
 
-    For each training question:
-    - generate multiple Chain-of-Thought responses
-    - parse the numerical answer
-    - keep only responses with a valid answer
-    - periodically checkpoint the accepted data
-    - stop once target_examples valid examples have been collected
+    Processes every training question and keeps at most one valid
+    reasoning response per question.
     """
 
     model = CoTModel(checkpoint="HuggingFaceTB/SmolLM2-1.7B-Instruct")
@@ -28,13 +24,13 @@ def generate_dataset(output_json: str, oversample: int = 10, temperature: float 
     for idx in range(len(trainset)):
         question, correct_answer = trainset[idx]
 
-        prompt = model.format_prompt(question)
-
         print(
             f"Generating question {idx + 1}/{len(trainset)} "
             f"(accepted so far: {len(generated_data)})",
             flush=True,
         )
+
+        prompt = model.format_prompt(question)
 
         generations = model.batched_generate(
             [prompt],
@@ -42,6 +38,7 @@ def generate_dataset(output_json: str, oversample: int = 10, temperature: float 
             temperature=temperature,
         )[0]
 
+        # Keep at most ONE valid generation for this question.
         for generation in generations:
             parsed_answer = model.parse_answer(generation)
 
@@ -57,35 +54,28 @@ def generate_dataset(output_json: str, oversample: int = 10, temperature: float 
                     ]
                 )
 
-                # Stop accepting once the target is reached.
-                if len(generated_data) >= target_examples:
-                    break
+                # We found a valid response for this question.
+                # Do not keep additional variants.
+                break
 
-        # Save a checkpoint periodically.
+        # Periodically save progress.
         if (idx + 1) % checkpoint_every == 0:
             with output_path.open("w") as f:
                 json.dump(generated_data, f, indent=2)
 
             print(
-                f"CHECKPOINT: saved {len(generated_data)} examples "
-                f"after question {idx + 1}",
+                f"CHECKPOINT: processed {idx + 1} questions, "
+                f"saved {len(generated_data)} unique examples",
                 flush=True,
             )
 
-        # Stop the entire generation loop at the target.
-        if len(generated_data) >= target_examples:
-            print(
-                f"Target of {target_examples} accepted examples reached.",
-                flush=True,
-            )
-            break
-
-    # Always save once more at the end.
+    # Make sure the final state is always written.
     with output_path.open("w") as f:
         json.dump(generated_data, f, indent=2)
 
-    print(f"Generated {len(generated_data)} accepted examples")
-    print(f"Saved final dataset to {output_path}")
+    print(f"Processed all {len(trainset)} training questions")
+    print(f"Generated {len(generated_data)} accepted unique examples")
+    print(f"Saved coverage dataset to {output_path}")
 
 if __name__ == "__main__":
     from fire import Fire
