@@ -27,6 +27,12 @@ def generate_dataset(output_json: str, oversample: int = 10, temperature: float 
 
         prompt = model.format_prompt(question)
 
+        print(
+            f"Generating question {idx + 1}/{len(trainset)} "
+            f"(accepted so far: {len(generated_data)})",
+            flush=True,
+        )
+
         # Generate multiple diverse attempts for the same question.
         generations = model.batched_generate(
             [prompt],
