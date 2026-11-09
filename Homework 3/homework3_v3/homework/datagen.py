@@ -50,7 +50,7 @@ def generate_dataset(output_json: str, oversample: int = 10, temperature: float 
                     ]
                 )
 
-        if (idx + 1) % 25 == 0:
+        if (idx + 1) % 5 == 0:
             print(
                 f"Processed {idx + 1}/{len(trainset)} questions - "
                 f"accepted {len(generated_data)} examples"
