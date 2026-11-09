@@ -49,7 +49,13 @@ def format_example(prompt: str, answer: str) -> dict[str, str]:
     """
     Construct a question / answer pair. Consider rounding the answer to make it easier for the LLM.
     """
-    raise NotImplementedError()
+    #raise NotImplementedError()
+    rounded_answer = round(float(answer), 2)
+
+    return {
+        "question": prompt,
+        "answer": f"<answer>{rounded_answer}</answer>",
+    }
 
 
 class TokenizedDataset:
@@ -78,8 +84,58 @@ def train_model(
     output_dir: str,
     **kwargs,
 ):
-    raise NotImplementedError()
-    test_model(output_dir)
+    #raise NotImplementedError()
+    #test_model(output_dir)
+    from peft import LoraConfig, get_peft_model
+    from transformers import Trainer, TrainingArguments
+
+    # Load the base SmolLM2 model
+    llm = BaseLLM()
+
+    # Configure LoRA for parameter-efficient fine-tuning
+    lora_config = LoraConfig(
+        r=8,
+        lora_alpha=32,
+        target_modules="all-linear",
+        bias="none",
+        task_type="CAUSAL_LM",
+    )
+
+    llm.model = get_peft_model(llm.model, lora_config)
+
+    # Enable gradient checkpointing to reduce GPU memory usage
+    llm.model.enable_input_require_grads()
+    llm.model.gradient_checkpointing_enable()
+
+    # Prepare the supervised training dataset
+    train_data = Dataset("train")
+    tokenized_data = TokenizedDataset(
+        llm.tokenizer,
+        train_data,
+        format_example,
+    )
+
+    training_args = TrainingArguments(
+        output_dir=output_dir,
+        num_train_epochs=3,
+        per_device_train_batch_size=8,
+        gradient_accumulation_steps=4,
+        learning_rate=5e-4,
+        bf16=True,
+        logging_steps=10,
+        save_strategy="epoch",
+        save_total_limit=1,
+        report_to="tensorboard",
+        **kwargs,
+    )
+
+    trainer = Trainer(
+        model=llm.model,
+        args=training_args,
+        train_dataset=tokenized_data,
+    )
+
+    trainer.train()
 
 
 def test_model(ckpt_path: str):
