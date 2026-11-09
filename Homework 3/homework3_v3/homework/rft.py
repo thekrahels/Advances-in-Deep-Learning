@@ -37,6 +37,9 @@ def train_model(
 ):
     # Reuse much of the SFT code here
     #raise NotImplementedError()
+    from peft import LoraConfig, get_peft_model
+    from transformers import Trainer, TrainingArguments
+    
     # Load the base 360M SmolLM2 model used by the homework grader.
     llm = BaseLLM()
 
