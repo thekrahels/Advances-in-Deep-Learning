@@ -136,7 +136,13 @@ def train_model(
     )
 
     trainer.train()
+    
+    # Save the final LoRA adapter directly in output_dir.
+    # This is the location expected by load().
+    trainer.model.save_pretrained(output_dir)
 
+    # Test the final saved adapter.
+    test_model(output_dir)
 
 def test_model(ckpt_path: str):
     testset = Dataset("valid")
