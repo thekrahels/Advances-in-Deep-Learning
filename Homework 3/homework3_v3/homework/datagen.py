@@ -1,3 +1,9 @@
+import json
+from pathlib import Path
+
+from .cot import CoTModel
+from .data import Dataset, is_answer_valid
+
 def generate_dataset(output_json: str, oversample: int = 10, temperature: float = 0.6):
     #raise NotImplementedError()
     """
