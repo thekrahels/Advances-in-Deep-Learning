@@ -9,6 +9,7 @@ class CoTModel(BaseLLM):
         """
 
         #raise NotImplementedError()
+        # Course-specific CoT prompt for MAK5724
         messages = [
             {
                 "role": "system",
