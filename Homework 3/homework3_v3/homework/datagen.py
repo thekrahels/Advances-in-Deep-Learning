@@ -4,24 +4,39 @@ from pathlib import Path
 from .cot import CoTModel
 from .data import Dataset, is_answer_valid
 
-def generate_dataset(output_json: str, oversample: int = 5, temperature: float = 0.6, checkpoint_every: int = 25,):
+def generate_dataset(output_json: str, oversample: int = 5, temperature: float = 0.6, checkpoint_every: int = 25, start_question: int = 1,):
     #raise NotImplementedError()
     """
     Generate a coverage-focused RFT dataset.
 
-    Processes every training question and keeps at most one valid
-    reasoning response per question.
+    Keeps at most one valid reasoning response per question.
+    If output_json already exists, previously accepted examples are loaded
+    so generation can resume without losing checkpointed work.
     """
 
     model = CoTModel(checkpoint="HuggingFaceTB/SmolLM2-1.7B-Instruct")
 
     trainset = Dataset("train")
-    generated_data = []
 
     output_path = Path(output_json)
     output_path.parent.mkdir(parents=True, exist_ok=True)
 
-    for idx in range(len(trainset)):
+    # Resume with already-saved accepted examples when available.
+    if output_path.exists():
+        with output_path.open("r") as f:
+            generated_data = json.load(f)
+
+        print(
+            f"RESUME: loaded {len(generated_data)} previously accepted examples",
+            flush=True,
+        )
+    else:
+        generated_data = []
+
+    # start_question is human-readable: 1 means dataset index 0.
+    start_idx = start_question - 1
+
+    for idx in range(start_idx, len(trainset)):
         question, correct_answer = trainset[idx]
 
         print(
@@ -38,7 +53,7 @@ def generate_dataset(output_json: str, oversample: int = 5, temperature: float =
             temperature=temperature,
         )[0]
 
-        # Keep at most ONE valid generation for this question.
+        # Keep at most one valid generation for this question.
         for generation in generations:
             parsed_answer = model.parse_answer(generation)
 
@@ -53,12 +68,9 @@ def generate_dataset(output_json: str, oversample: int = 5, temperature: float =
                         generation,
                     ]
                 )
-
-                # We found a valid response for this question.
-                # Do not keep additional variants.
                 break
 
-        # Periodically save progress.
+        # Checkpoint based on the actual training-question number.
         if (idx + 1) % checkpoint_every == 0:
             with output_path.open("w") as f:
                 json.dump(generated_data, f, indent=2)
@@ -69,11 +81,11 @@ def generate_dataset(output_json: str, oversample: int = 5, temperature: float =
                 flush=True,
             )
 
-    # Make sure the final state is always written.
+    # Final save.
     with output_path.open("w") as f:
         json.dump(generated_data, f, indent=2)
 
-    print(f"Processed all {len(trainset)} training questions")
+    print(f"Processed through question {len(trainset)}")
     print(f"Generated {len(generated_data)} accepted unique examples")
     print(f"Saved coverage dataset to {output_path}")
 
