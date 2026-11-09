@@ -8,7 +8,31 @@ class CoTModel(BaseLLM):
         better if you provide a chat template. self.tokenizer.apply_chat_template can help here
         """
 
-        raise NotImplementedError()
+        #raise NotImplementedError()
+        messages = [
+            {
+                "role": "system",
+                "content": (
+                "You are MAK5724's course assistant for Advances in Deep Learning at UT. "
+                "Work through each unit conversion carefully and show the reasoning needed "
+                "to reach the result. Keep the explanation clear and straightforward. "
+                "After working through the conversion, provide only the numerical result "
+                "between <answer> and </answer> tags."
+                ),
+            },
+            {
+                "role": "user",
+                "content": question,
+            },
+        ]
+
+        return self.tokenizer.apply_chat_template(
+            messages,
+            tokenize=False,
+            add_generation_prompt=True,
+        )
+
+
 
 
 def load() -> CoTModel:
