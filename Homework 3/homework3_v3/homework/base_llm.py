@@ -105,7 +105,64 @@ class BaseLLM:
                 for r in self.batched_generate(prompts[idx : idx + micro_batch_size], num_return_sequences, temperature)
             ]
 
-        raise NotImplementedError()
+        #raise NotImplementedError()
+        # Generation works best with left padding for causal language models.
+        self.tokenizer.padding_side = "left"
+
+        # SmolLM2 does not have a separate padding token, so use the EOS token.
+        if self.tokenizer.pad_token_id is None:
+            self.tokenizer.pad_token_id = self.tokenizer.eos_token_id
+
+        # Tokenize all prompts together and move them to the model's device.
+        inputs = self.tokenizer(
+            prompts,
+            padding=True,
+            return_tensors="pt",
+        ).to(self.device)
+
+        # If num_return_sequences is not specified, generate one answer per prompt.
+        n = 1 if num_return_sequences is None else num_return_sequences
+
+        # Sampling is only used when temperature is greater than zero.
+        do_sample = temperature > 0
+
+        generation_kwargs = {
+            "max_new_tokens": 50,
+            "do_sample": do_sample,
+            "num_return_sequences": n,
+            "eos_token_id": self.tokenizer.eos_token_id,
+            "pad_token_id": self.tokenizer.pad_token_id,
+        }
+
+        # Temperature should only be passed when sampling.
+        if do_sample:
+            generation_kwargs["temperature"] = temperature
+
+        # Generate tokens.
+        with torch.no_grad():
+            outputs = self.model.generate(
+                **inputs,
+                **generation_kwargs,
+            )
+
+        # Remove the original prompt tokens so we decode only newly generated text.
+        input_length = inputs["input_ids"].shape[1]
+        generated_tokens = outputs[:, input_length:]
+
+        generations = self.tokenizer.batch_decode(
+            generated_tokens,
+            skip_special_tokens=True,
+        )
+
+        # When multiple sequences were requested, reshape the flat output
+        # into one list of generations per prompt.
+        if num_return_sequences is not None:
+            return [
+                generations[i : i + n]
+                for i in range(0, len(generations), n)
+            ]
+
+        return generations
 
     def answer(self, *questions) -> list[float]:
         """
