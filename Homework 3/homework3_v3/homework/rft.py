@@ -58,7 +58,7 @@ def train_model(
     llm.model.gradient_checkpointing_enable()
 
     # Load the accepted reasoning examples from data/rft.json.
-    train_data = Dataset("rft")
+    train_data = Dataset("rft_augmented")
     tokenized_data = TokenizedDataset(
         llm.tokenizer,
         train_data,
@@ -67,10 +67,10 @@ def train_model(
 
     training_args = TrainingArguments(
         output_dir=output_dir,
-        num_train_epochs=4,
+        num_train_epochs=5,
         per_device_train_batch_size=8,
         gradient_accumulation_steps=4,
-        learning_rate=4e-4,
+        learning_rate=5e-4,
         bf16=True,
         logging_steps=10,
         save_strategy="epoch",
