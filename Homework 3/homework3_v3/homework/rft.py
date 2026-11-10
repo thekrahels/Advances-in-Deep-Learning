@@ -59,7 +59,7 @@ def train_model(
     llm.model.gradient_checkpointing_enable()
 
     # Load the accepted reasoning examples from data/rft.json.
-    train_data = Dataset("rft_combined")
+    train_data = Dataset("rft")
     tokenized_data = TokenizedDataset(
         llm.tokenizer,
         train_data,
