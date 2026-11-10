@@ -39,23 +39,10 @@ def train_model(
     #raise NotImplementedError()
     from peft import LoraConfig, get_peft_model
     from transformers import Trainer, TrainingArguments
-    from pathlib import Path
-    from peft import PeftModel
-
-    # Start from the SFT-trained model rather than the raw base model.
+    
+    # Start RFT from the original base model.
     llm = BaseLLM()
-
-    sft_path = Path(__file__).parent / "sft_model"
-
-    # Load the successful SFT LoRA adapter and permanently merge it
-    # into the base model before fitting the new RFT adapter.
-    sft_model = PeftModel.from_pretrained(
-        llm.model,
-        sft_path,
-    )
-
-    llm.model = sft_model.merge_and_unload().to(llm.device)
-
+    
     # Configure a new LoRA adapter for RFT.
     lora_config = LoraConfig(r=8,
         lora_alpha=32,
