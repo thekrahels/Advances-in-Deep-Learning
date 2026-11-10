@@ -42,7 +42,7 @@ def train_model(
     
     # Start RFT from the original base model.
     llm = BaseLLM()
-    
+
     # Configure a new LoRA adapter for RFT.
     lora_config = LoraConfig(r=8,
         lora_alpha=32,
@@ -67,10 +67,10 @@ def train_model(
 
     training_args = TrainingArguments(
         output_dir=output_dir,
-        num_train_epochs=3,
+        num_train_epochs=4,
         per_device_train_batch_size=8,
         gradient_accumulation_steps=4,
-        learning_rate=2e-4,
+        learning_rate=4e-4,
         bf16=True,
         logging_steps=10,
         save_strategy="epoch",
